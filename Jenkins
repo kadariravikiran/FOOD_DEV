@@ -18,7 +18,7 @@ pipeline {
             steps {
 
                 git branch: 'main',
-                url: 'YOUR_GITHUB_REPO',
+                url: 'https://github.com/kadariravikiran/FOOD_DEV.git',
                 credentialsId: 'git-cred'
 
             }
@@ -42,7 +42,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
 
-                withSonarQubeEnv('sonar') {
+                withSonarQubeEnv('sonarqube') {
 
                     sh '''
                     $SCANNER_HOME/bin/sonar-scanner \
@@ -81,7 +81,7 @@ pipeline {
         stage('Docker Build') {
             steps {
 
-                sh 'docker build -t YOUR_DOCKER_USERNAME/myapp:v1 .'
+                sh 'docker build -t ravikirankadari/myapp:v1 .'
 
             }
         }
@@ -89,7 +89,7 @@ pipeline {
         stage('Trivy Image Scan') {
             steps {
 
-                sh 'trivy image YOUR_DOCKER_USERNAME/myapp:v1'
+                sh 'trivy image ravikirankadari/myapp:v1'
 
             }
         }
@@ -102,7 +102,7 @@ pipeline {
                     toolName: 'docker'
                 ) {
 
-                    sh 'docker push YOUR_DOCKER_USERNAME/myapp:v1'
+                    sh 'docker push ravikirankadari/myapp:v1'
 
                 }
 
