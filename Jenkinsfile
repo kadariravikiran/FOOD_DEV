@@ -5,7 +5,7 @@ pipeline {
 
     tools {
         jdk 'jdk17'
-        maven 'maven2'
+        maven 'MAVEN'
     }
 
     environment {
