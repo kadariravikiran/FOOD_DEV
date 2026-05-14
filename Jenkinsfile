@@ -1,15 +1,16 @@
-
 pipeline {
 
     agent any
 
     tools {
-        jdk 'jdk17'
+        jdk 'JAVA'
         maven 'MAVEN'
     }
 
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
+        IMAGE_NAME = 'ravikirankadari/food-dev'
+        IMAGE_TAG = 'v1'
     }
 
     stages {
@@ -17,9 +18,11 @@ pipeline {
         stage('Clone Code') {
             steps {
 
-                git branch: 'main',
-                url: 'https://github.com/kadariravikiran/FOOD_DEV.git',
-                credentialsId: 'git-cred'
+                git(
+                    branch: 'main',
+                    url: 'https://github.com/kadariravikiran/FOOD_DEV.git',
+                    credentialsId: 'git-cred'
+                )
 
             }
         }
@@ -28,11 +31,11 @@ pipeline {
             steps {
 
                 withMaven(
-                    maven: 'maven2',
+                    maven: 'MAVEN',
                     globalMavenSettingsConfig: 'global-settings'
                 ) {
 
-                    sh 'mvn clean package'
+                    sh 'mvn clean package -DskipTests'
 
                 }
 
@@ -46,7 +49,9 @@ pipeline {
 
                     sh '''
                     $SCANNER_HOME/bin/sonar-scanner \
-                    -Dsonar.projectName=myapp \
+                    -Dsonar.projectKey=food-dev \
+                    -Dsonar.projectName=food-dev \
+                    -Dsonar.sources=. \
                     -Dsonar.java.binaries=target
                     '''
 
@@ -63,15 +68,15 @@ pipeline {
             }
         }
 
-        stage('Upload To Nexus') {
+        stage('Upload Artifact To Nexus') {
             steps {
 
                 withMaven(
-                    maven: 'maven2',
+                    maven: 'MAVEN',
                     globalMavenSettingsConfig: 'global-settings'
                 ) {
 
-                    sh 'mvn deploy'
+                    sh 'mvn deploy -DskipTests'
 
                 }
 
@@ -81,15 +86,15 @@ pipeline {
         stage('Docker Build') {
             steps {
 
-                sh 'docker build -t ravikirankadari/myapp:v1 .'
+                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
 
             }
         }
 
-        stage('Trivy Image Scan') {
+        stage('Trivy Docker Image Scan') {
             steps {
 
-                sh 'trivy image ravikirankadari/myapp:v1'
+                sh 'trivy image $IMAGE_NAME:$IMAGE_TAG'
 
             }
         }
@@ -99,10 +104,10 @@ pipeline {
 
                 withDockerRegistry(
                     credentialsId: 'docker-cred',
-                    toolName: 'docker'
+                    url: 'https://index.docker.io/v1/'
                 ) {
 
-                    sh 'docker push ravikirankadari/myapp:v1'
+                    sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
 
                 }
 
