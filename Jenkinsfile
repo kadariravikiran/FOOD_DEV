@@ -9,6 +9,7 @@ pipeline {
 
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
+
         IMAGE_NAME = 'ravikirankadari/food-dev'
         IMAGE_TAG = 'v1'
     }
@@ -27,15 +28,29 @@ pipeline {
             }
         }
 
+        stage('Check Project Structure') {
+            steps {
+
+                sh 'pwd'
+                sh 'ls -la'
+                sh 'find . -name pom.xml'
+
+            }
+        }
+
         stage('Build Maven') {
             steps {
 
-                withMaven(
-                    maven: 'MAVEN',
-                    globalMavenSettingsConfig: 'global-settings'
-                ) {
+                dir('backend') {
 
-                    sh 'mvn clean package -DskipTests'
+                    withMaven(
+                        maven: 'MAVEN',
+                        globalMavenSettingsConfig: 'global-settings'
+                    ) {
+
+                        sh 'mvn clean package -DskipTests'
+
+                    }
 
                 }
 
@@ -45,15 +60,19 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
 
-                withSonarQubeEnv('sonarqube') {
+                dir('backend') {
 
-                    sh '''
-                    $SCANNER_HOME/bin/sonar-scanner \
-                    -Dsonar.projectKey=food-dev \
-                    -Dsonar.projectName=food-dev \
-                    -Dsonar.sources=. \
-                    -Dsonar.java.binaries=target
-                    '''
+                    withSonarQubeEnv('sonarqube') {
+
+                        sh '''
+                        $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectKey=food-dev \
+                        -Dsonar.projectName=food-dev \
+                        -Dsonar.sources=. \
+                        -Dsonar.java.binaries=target
+                        '''
+
+                    }
 
                 }
 
@@ -63,7 +82,11 @@ pipeline {
         stage('Trivy File Scan') {
             steps {
 
-                sh 'trivy fs .'
+                dir('backend') {
+
+                    sh 'trivy fs .'
+
+                }
 
             }
         }
@@ -71,12 +94,16 @@ pipeline {
         stage('Upload Artifact To Nexus') {
             steps {
 
-                withMaven(
-                    maven: 'MAVEN',
-                    globalMavenSettingsConfig: 'global-settings'
-                ) {
+                dir('backend') {
 
-                    sh 'mvn deploy -DskipTests'
+                    withMaven(
+                        maven: 'MAVEN',
+                        globalMavenSettingsConfig: 'global-settings'
+                    ) {
+
+                        sh 'mvn deploy -DskipTests'
+
+                    }
 
                 }
 
@@ -86,7 +113,11 @@ pipeline {
         stage('Docker Build') {
             steps {
 
-                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+                dir('backend') {
+
+                    sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+
+                }
 
             }
         }
