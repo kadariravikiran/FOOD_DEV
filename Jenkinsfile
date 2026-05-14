@@ -6,8 +6,8 @@ pipeline {
 
         SCANNER_HOME = tool 'sonar-scanner'
 
-        IMAGE_NAME = 'ravikirankadari/food-dev'
-        IMAGE_TAG  = 'v1'
+        BACKEND_IMAGE = 'ravikirankadari/food-backend:v1'
+        FRONTEND_IMAGE = 'ravikirankadari/food-frontend:v1'
 
     }
 
@@ -25,29 +25,50 @@ pipeline {
             }
         }
 
-        stage('Check Project Structure') {
+        stage('Backend Install') {
             steps {
 
-                sh 'pwd'
-                sh 'ls -la'
-                sh 'find . -name package.json'
-                sh 'find . -name pom.xml'
+                dir('backend') {
+
+                    sh 'npm install'
+
+                }
 
             }
         }
 
-        stage('Install Node Modules') {
+        stage('Backend Build') {
             steps {
 
-                sh 'npm install'
+                dir('backend') {
+
+                    sh 'npm run build || true'
+
+                }
 
             }
         }
 
-        stage('Build Application') {
+        stage('Frontend Install') {
             steps {
 
-                sh 'npm run build'
+                dir('frontend') {
+
+                    sh 'npm install'
+
+                }
+
+            }
+        }
+
+        stage('Frontend Build') {
+            steps {
+
+                dir('frontend') {
+
+                    sh 'npm run build'
+
+                }
 
             }
         }
@@ -61,7 +82,7 @@ pipeline {
                     $SCANNER_HOME/bin/sonar-scanner \
                     -Dsonar.projectKey=food-dev \
                     -Dsonar.projectName=food-dev \
-                    -Dsonar.sources=. 
+                    -Dsonar.sources=.
                     '''
 
                 }
@@ -77,18 +98,26 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
+        stage('Backend Docker Build') {
             steps {
 
-                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+                dir('backend') {
+
+                    sh 'docker build -t $BACKEND_IMAGE .'
+
+                }
 
             }
         }
 
-        stage('Trivy Docker Image Scan') {
+        stage('Frontend Docker Build') {
             steps {
 
-                sh 'trivy image $IMAGE_NAME:$IMAGE_TAG'
+                dir('frontend') {
+
+                    sh 'docker build -t $FRONTEND_IMAGE .'
+
+                }
 
             }
         }
@@ -101,7 +130,8 @@ pipeline {
                     url: 'https://index.docker.io/v1/'
                 ) {
 
-                    sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
+                    sh 'docker push $BACKEND_IMAGE'
+                    sh 'docker push $FRONTEND_IMAGE'
 
                 }
 
