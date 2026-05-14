@@ -2,24 +2,24 @@ apiVersion: apps/v1
 kind: Deployment
 
 metadata:
-  name: springboot-deployment
+  name: food-dev-deployment
 
 spec:
   replicas: 2
 
   selector:
     matchLabels:
-      app: springboot
+      app: food-dev
 
   template:
     metadata:
       labels:
-        app: springboot
+        app: food-dev
 
     spec:
       containers:
-      - name: springboot-container
-        image: DOCKER_USERNAME/myapp:v1
+      - name: food-dev-container
+        image: ravikirankadari/food-dev:v1
 
         ports:
         - containerPort: 8080
